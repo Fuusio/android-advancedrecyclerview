@@ -1045,4 +1045,68 @@ public class RecyclerViewSwipeManager implements SwipeableItemConstants {
             return hasMessages(MSG_DEFERRED_CANCEL_SWIPE);
         }
     }
+    
+        // FLOXP - BEGIN
+    @SuppressWarnings("unchecked")
+    public void resetSwipedItemPosition(final RecyclerView.ViewHolder swipedItem, final int itemPosition) {
+        if (swipedItem == null) {
+            return;
+        }
+
+        if ((mSwipingItemId != RecyclerView.NO_ID) && (mSwipingItemId == swipedItem.getItemId())) {
+            cancelSwipe();
+        }
+
+        cancelPendingAnimations(swipedItem);
+
+        // cancel deferred request
+        mHandler.removeDeferredCancelSwipeRequest();
+
+        mHandler.cancelLongPressDetection();
+
+        if (mRecyclerView != null && mRecyclerView.getParent() != null) {
+            mRecyclerView.getParent().requestDisallowInterceptTouchEvent(false);
+        }
+
+        mVelocityTracker.clear();
+
+        mCheckingTouchSlop = RecyclerView.NO_ID;
+        mSwipingItem = null;
+        mSwipingItemPosition = RecyclerView.NO_POSITION;
+        mSwipingItemId = RecyclerView.NO_ID;
+        mLastTouchX = 0;
+        mLastTouchY = 0;
+        mInitialTouchX = 0;
+        mTouchedItemOffsetX = 0;
+        mTouchedItemOffsetY = 0;
+        mSwipingItemReactionType = 0;
+
+        if (mSwipingItemOperator != null) {
+            mSwipingItemOperator.finish();
+            mSwipingItemOperator = null;
+        }
+
+        final SwipeResultActionDefault resultAction = new SwipeResultActionDefault();
+
+        mItemSlideAnimator.finishSwipeSlideToDefaultPosition(
+                swipedItem, true, true, mReturnToDefaultPositionAnimationDuration,
+                itemPosition, resultAction);
+        final SwipeableItemViewHolder swipedItemHolder = ((SwipeableItemViewHolder) swipedItem);
+
+        swipedItemHolder.setSwipeStateFlags(-1);
+        swipedItemHolder.setSwipeResult(SwipeableItemConstants.RESULT_NONE);
+        swipedItemHolder.setAfterSwipeReaction(SwipeableItemConstants.AFTER_SWIPE_REACTION_DEFAULT);
+        swipedItemHolder.setSwipeItemHorizontalSlideAmount(0);
+        swipedItemHolder.setSwipeItemVerticalSlideAmount(0);
+        swipedItemHolder.setProportionalSwipeAmountModeEnabled(true);
+
+        View containerView = swipedItemHolder.getSwipeableContainerView();
+
+        if (containerView != null) {
+            ViewCompat.animate(containerView).cancel();
+            ViewCompat.setTranslationX(containerView, 0.0f);
+            ViewCompat.setTranslationY(containerView, 0.0f);
+        }
+    }
+    // FLOXP - END
 }
